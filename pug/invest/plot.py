@@ -20,7 +20,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import util
 
 
-
 def period_boxplot(df, period='year', column='Adj Close'):
     # df['period'] = df.groupby(lambda t: getattr(t, period)).aggregate(np.mean)
     df['period'] = getattr(df.index, period)
