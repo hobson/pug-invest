@@ -8,7 +8,7 @@ This is a namespace package (sub-package) of the pug package a collection of uti
 
 ## Introduction
 
-Investing (finance) algorithms for time series manipulation and predictive analytics.
+Investing (finance) utilities for time series manipulation and predictive analytics.
 
 ---
 
