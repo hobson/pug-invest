@@ -4,7 +4,6 @@ import six
 import datetime
 import os
 from collections import Counter, OrderedDict
-from traceback import print_exc
 import warnings
 
 import pandas as pd
@@ -384,9 +383,10 @@ def plot_histogram(hist, width=0.9,
         plt.tight_layout()
 
     try:
+        # ipython notebook overrides plt.show and doesn't have a block kwarg
         plt.show(block=False)
-    except:
-        print_exc()
+    except TypeError:
+        plt.show()
 
     if save_path:
         if os.path.isfile(save_path + '.png'):
@@ -546,7 +546,11 @@ def pandas_surf(df, show=True, save=True, filename_space='_', *args, **kwargs):
     ax.zaxis.set_major_formatter(plt.FormatStrFormatter('%g%%'))
     fig.colorbar(surf, shrink=0.5, aspect=5)
     if show:
-        plt.show(block=False)
+        try:
+            # ipython notebook overrides plt.show and doesn't have a block kwarg
+            plt.show(block=False)
+        except TypeError:
+            plt.show()
     if save:
         path = make_filename(legends[2], strict=False, space=filename_space)
         if isinstance(save, basestring):
