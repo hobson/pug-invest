@@ -2,8 +2,8 @@
 import datetime
 from django.views.generic import TemplateView
 import sim
-from pug.miner.views import d3_plot_context
-from models import Day, get_dataframes, get_panel
+from pug.dj.miner.views import d3_plot_context
+from models import Day, get_panel
 from pug.nlp import util
 import pandas as pd
 
