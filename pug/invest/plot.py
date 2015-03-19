@@ -156,7 +156,7 @@ def animate_panel(panel, keys=None, columns=None, interval=1000, blit=False, tit
     # FIXME: doesn't work with ext=mp4
     # init_func to mask out pixels to be redrawn/cleared which speeds redrawing of plot
     def mask_lines():
-        if verbosity:
+        if verbosity > 0:
             print('Initialing mask_lines. . .')
         df = panel[0]
         x = df.index.values
@@ -167,7 +167,7 @@ def animate_panel(panel, keys=None, columns=None, interval=1000, blit=False, tit
             lines[i].set_ydata(np.ma.array(y[i], mask=True))
         return lines
 
-    if verbosity:
+    if verbosity > 0:
         print('Drawing frames for a ".{0}" animation{1}. . .'.format(ext, ' with blitting' if blit else ''))
     animate(keys[0])
     ani = animation.FuncAnimation(fig, animate, keys, interval=interval, blit=blit) #, init_func=mask_lines, blit=True)
@@ -179,7 +179,7 @@ def animate_panel(panel, keys=None, columns=None, interval=1000, blit=False, tit
     #     kwargs['bitrate'] = min(kwargs['bitrate'], int(8e5 / interval))  # low information rate (long interval) might make it impossible to achieve a higher bitrate ight not
     if path and isinstance(path, basestring):
         path += '.{0}'.format(ext)
-        if verbosity:
+        if verbosity > 0:
             print('Saving video to {0}. . .'.format(path))
         ani.save(path, **kwargs)
 
