@@ -5,11 +5,14 @@ when you run "manage.py test".
 Replace this with more appropriate tests for your application.
 """
 
-from django.test import TestCase
-import pandas as pd
+
+# from django.test import TestCase
+from unittest import TestCase, main
+# import doctest
 from pug.invest.util import clipped_area
-from scipy.optimize import minimize
+import pandas as pd
 np = pd.np
+from scipy.optimize import minimize
 
 
 class SimpleTest(TestCase):
@@ -50,3 +53,7 @@ class SimpleTest(TestCase):
         integral = clipped_area(ts, thresh=thresh)
         self.assertGreater(capacity, integral)
         self.assertLess((capacity-integral)/capacity, 0.01)
+
+
+if __name__ == '__main__':
+    main()

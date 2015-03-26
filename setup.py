@@ -60,9 +60,9 @@ setup(
 
     install_requires = install_requires,
     dependency_links = dependency_links,
-    # scripts=['pug/bin/test_ann.py'],
+    # scripts=['pug/bin/push.py'],
     # entry_points={'console_scripts': [
-    #     'test-ann = pug.ann.tests.run',
+    #     'push=pug.bin.push:main',
     # ]},
     version = version,
     description = description,
