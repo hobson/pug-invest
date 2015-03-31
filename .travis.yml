@@ -1,6 +1,7 @@
 language: python
 python:
-  - "2.7"
+    - 2.7
+    # - 3.3
 # TODO: What about yum (rpm) or apt (deb) binaries and C code like BLAS and lapack?
 # command to install dependencies
 before_install:
@@ -17,9 +18,6 @@ before_install:
   - conda update --yes conda
   - conda install --yes pyparsing numpy pandas scipy
 install:
-  #    - "pip install setuptools==3.6"
-  #    - "sudo apt-get install libatlas-base-dev gfortran python-scipy"
-  #    - "pip install -r requirements/travis.txt"
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose dateutil pandas Pillow statsmodels
   # # Coverage packages are on Dan's binstar channel
   # - conda install --yes -c dan_blanchard python-coveralls nose-cov
@@ -30,7 +28,6 @@ install:
   #- pip install -r requirements/travis.txt
   - pip install .
   - pip freeze
-
 # shell command run tests
 script: 
     - "python pug/invest/tests.py"

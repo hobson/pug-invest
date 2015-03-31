@@ -68,6 +68,7 @@ install_requires = [
     'python-slugify==0.1.0',
     'matplotlib==1.4.3',
     'ConcurrentPandas==0.1.0',
+    'numpy==1.9.2',
     'scipy>=0.15.1',
 
     'pug-nlp>=0.0.15',
