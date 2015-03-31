@@ -17,8 +17,15 @@ import os
 # #    you need to say so in your setup(kwargs) below, like this:
 # # setup(cmdclass={'test': test},...
 
+print('Installing package named {} from the {} project, a sub-package/project of the namespace package {}. . .'.format(package_name, project_name, package_name))
+
 global_env, env = {}, {}
-execfile(os.path.join(__namespace_package__, __subpackage__, 'package_info.py'), global_env, env)
+package_info_path = os.path.join(__subpackage__, 'package_info.py')
+if __namespace_package__:
+    package_info_path = os.path.join(__namespace_package__, package_info_path)
+# FIXME: import this by path instead of executing it
+execfile(package_info_path, global_env, env)
+print('Found package info in {}: {}'.format(package_info_path, env))
 
 version = env.get('__version__', '0.0.1')
 package_docstring = env.get('__doc__', '`{}` python package'.format(project_name))
@@ -27,42 +34,58 @@ long_description = package_docstring
 __url__  = env.get('__url__', 'http://github.com/hobson/')
 __authors__  = env.get('__authors__', ('Hobson <hobson@totalgood.com>',))
 try:
-    import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
+    long_description = open('README.rst', 'r').read()
 except:  # (IOError, ImportError, OSError, RuntimeError):
-    # from traceback import print_exc
-    # print_exc()
-    print('Unable to use pypandoc to reformat the README.md file into RST format')
+    print('WARNING: Unable to find or read README.rst.')
+
+
+dependency_links = [] #  ['http://github.com/hobson/pug-nlp/tarball/master#egg=pug-nlp-master'] 
+EXCLUDE_FROM_PACKAGES = []
+
 
 print('Installing package named {} from the {} project. . .'.format(package_name, project_name))
-
-try:
-    from pip.req import parse_requirements
-    requirements = list(parse_requirements('requirements.txt'))
-except:
-    requirements = []
-install_requires=[str(req.req).split(' ')[0].strip() for req in requirements if req.req and not req.url]
-
-print('Install requires: {}'.format(install_requires))
-dependency_links=[req.url for req in requirements if req.url]
-print('Dependency links: {}'.format(dependency_links))
+packages = list(set([package_name] + list(find_packages(exclude=EXCLUDE_FROM_PACKAGES))))
+print('Packages being installed: {}'.format(packages))
 
 
-EXCLUDE_FROM_PACKAGES = []
+# sudo yum install libjpeg-devel openjpeg-devel
+install_requires = [
+    'wsgiref==0.1.2',
+    'six==1.9.0',
+    'setuptools==14.3.1',
+    'pyzmq==14.5.0',
+    'Unidecode==0.4.16',
+    'cffi==0.8.6',
+    'chardet==2.3.0',
+    'pyOpenSSL==0.14',
+    'pytz==2015.2', 
+    'python-dateutil==2.4.1',
+    'pandas==0.15.2',
+    'xlrd==0.9.3', 'Pillow==2.7',
+    'fuzzywuzzy==0.5.0',
+    'python-Levenshtein==0.12.0',
+    'progressbar2==2.7.3',
+    'python-slugify==0.1.0',
+    'matplotlib==1.4.3',
+    'ConcurrentPandas>=0.1.1',
+
+    'pug-nlp>=0.0.15',
+    ]
+print('install_requires: {}'.format(install_requires))
+
 
 setup(
     name=project_name,
-    packages=find_packages(exclude=EXCLUDE_FROM_PACKAGES),
+    packages=packages,
     namespace_packages=[__namespace_package__],
 
     # install non-.py files listed in MANIFEST.in (.js, .html, .txt, .md, etc)
     include_package_data = True,
-
     install_requires = install_requires,
     dependency_links = dependency_links,
-    # scripts=['pug/bin/test_ann.py'],
+    # scripts=['pug/bin/push.py'],
     # entry_points={'console_scripts': [
-    #     'test-ann = pug.ann.tests.run',
+    #     'push=pug.bin.push:main',
     # ]},
     version = version,
     description = description,
@@ -77,7 +100,7 @@ setup(
 
     # Force setup.py to use the latest github master source files rather than the cheeseshop tarball: 
     download_url = "{}/tarball/master".format(__url__),
-    keywords = ["nlp", "natural language processing", "text", "text processing", "bot", "ai", "agent", "data", "science", "data science", "math", "machine-learning", "statistics", "database"],
+    keywords = ["finance", "quant", "quantitative finance", "time series", "analysis", "data", "science", "data science", "math", "machine-learning", "statistics"],
     classifiers = [
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.7",
@@ -88,7 +111,6 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Scientific/Engineering :: Mathematics",
         "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
         ],
