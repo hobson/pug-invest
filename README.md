@@ -1,14 +1,13 @@
 # pug-invest
 
-## Investing (finance) algorithms 
+[![Build Status](https://travis-ci.org/hobson/pug-invest.svg?branch=master "Travis Build & Test Status")](https://travis-ci.org/hobson/pug-invest)
+[![Coverage Status](https://coveralls.io/repos/hobson/pug-invest/badge.png)](https://coveralls.io/r/hobson/pug-invest)
+[![Version Status](https://pypip.in/v/pug-invest/badge.png)](https://pypi.python.org/pypi/pug-invest/)
+[![Downloads](https://pypip.in/d/pug-invest/badge.png)](https://pypi.python.org/pypi/pug-invest/)
 
-This is a namespace package (sub-package) of the pug package a collection of utilities by and for the PDX Python User Group.
+## Investing (finance) machine learning algorithms 
 
----
-
-## Introduction
-
-Investing (finance) utilities for time series manipulation and predictive analytics.
+This sub-package of the pug namespace package, provides utilities and algorithms for manipulating and predictin financial time-series data.
 
 ---
 
