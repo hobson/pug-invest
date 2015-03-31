@@ -67,9 +67,9 @@ install_requires = [
     'progressbar2==2.7.3',
     'python-slugify==0.1.0',
     'matplotlib==1.4.3',
-    'ConcurrentPandas==0.1.0',
     'numpy==1.9.2',
     'scipy>=0.15.1',
+    'ConcurrentPandas==0.1.0',
 
     'pug-nlp>=0.0.15',
     ]
@@ -98,7 +98,8 @@ setup(
     #tests_require = ['django-setuptest', 'south'],
     #test_suite = 'setuptest.setuptest.SetupTestSuite',
     #cmdclass = {'test': test},
-    url = __url__,
+    # this would install the master branch from github
+    # url = __url__,
 
     # Force setup.py to use the latest github master source files rather than the cheeseshop tarball: 
     download_url = "{}/tarball/master".format(__url__),
@@ -113,7 +114,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Scientific/Engineering :: Mathematics",
-        "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
         ],
 )
