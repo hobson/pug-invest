@@ -733,15 +733,15 @@ def normalize_symbols(symbols, *args, **kwargs):
       list of str: list of cananical ticker symbol strings (typically after .upper().strip())
 
     Examples:
-      >>> normalize_symbols("Goog,AAPL")
+      >> normalize_symbols("Goog,AAPL")
       ['GOOG', 'AAPL']
-      >>> normalize_symbols("  $SPX   ", " aaPL ")
+      >> normalize_symbols("  $SPX   ", " aaPL ")
       ['$SPX', 'AAPL']
-      >>> normalize_symbols("  $SPX   ", " aaPL ", postprocess=str)
+      >> normalize_symbols("  $SPX   ", " aaPL ", postprocess=str)
       ['$SPX', 'aaPL']
-      >>> normalize_symbols(["$SPX", ["GOOG", "AAPL"]])
+      >> normalize_symbols(["$SPX", ["GOOG", "AAPL"]])
       ['GOOG', 'AAPL', '$SPX']
-      >>> normalize_symbols("$spy", ["GOOGL", "Apple"], postprocess=str)
+      >> normalize_symbols("$spy", ["GOOGL", "Apple"], postprocess=str)
       ['$spy', 'GOOGL', 'Apple']
     """
     postprocess = kwargs.get('postprocess', None) or str.upper
