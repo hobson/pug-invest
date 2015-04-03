@@ -78,11 +78,8 @@ def rmse(target, prediction, relative=False, percent=False):
         # If the prediction and target are both 0, then the error is 0 and should be included in the RMSE
         # Otherwise, the np.isinf() below would remove all these zero-error predictions from the array.
         denom[(denom==0) & (target==0)] = 1
-        print(denom)
         err = (err / denom)
-        print(err)
         err = err[(~ np.isnan(err)) & (~ np.isinf(err))]
-        print(err)
     return 100*rms(err) if percent else rms(err)
 
 
@@ -193,15 +190,15 @@ def make_time_series(x, t=pd.Timestamp(datetime.datetime(1970,1,1)), freq=None):
     """Convert a 2-D array of time/value pairs (or pair of time/value vectors) into a pd.Series time-series
 
     >>> make_time_series(range(3))  # doctest: +NORMALIZE_WHITESPACE
-    1970-01-01 00:00:00    0
-    1970-01-01 00:15:00    1
-    1970-01-01 00:30:00    2
+    1970-01-01 00:00:00    NaN
+    1970-01-01 00:15:00    NaN
+    1970-01-01 00:30:00    NaN
     dtype: int64
     """
     if isinstance(x, pd.DataFrame):
         x = pd.Series(x[x.columns[0]])
     elif not isinstance(x, pd.Series) and (not isinstance(t, (pd.Series, pd.Index, list, tuple)) or not len(t)):
-        print("Coercing a non-Series")
+        #warnings.warn("Coercing a non-Series")
         if len(x) == 2: 
             t, x = listify(x[0]), listify(x[1])
         elif len(x) >= 2:
@@ -211,10 +208,12 @@ def make_time_series(x, t=pd.Timestamp(datetime.datetime(1970,1,1)), freq=None):
                 pass
         x = pd.Series(x)
     else:
-        if not isinstance(t, pd.Timestamp):
+        if isinstance(t, (datetime.datetime, pd.Timestamp)):
+            t = pd.Timestamp(t)
+        else:
             x = pd.Series(listify(x), index=listify(t))
     if not isinstance(x, pd.Series):
-        raise TypeError("`make_time_series` expects x to be a type that can be coerced to a Series object, but it's type is: {0}".format(type(x)))
+        raise TypeError("`pug.invest.util.make_time_series(x, t)` expects x to be a type that can be coerced to a Series object, but it's type is: {0}".format(type(x)))
     # By this point x must be a Series, only question is whether its index needs to be converted to a DatetimeIndex
     if x.index[0] != 0 and isinstance(x.index[0], (datetime.date, datetime.datetime, pd.Timestamp, basestring, float, np.int64, int)):
         t = x.index
@@ -239,7 +238,7 @@ def pandas_mesh(df):
       OrderedDict: column labels from the data frame are the keys, values are 2-D matrices
         All matrices have shape NxM, where N = len(set(df.iloc[:,0])) and M = len(set(df.iloc[:,1]))
 
-    >>> pandas_mesh(pd.DataFrame(np.arange(18).reshape(3,6), columns=list('ABCDEF'))).values()  # +doctest.NORMALIZE_WHITESPACE
+    >>> pandas_mesh(pd.DataFrame(np.arange(18).reshape(3,6), columns=list('ABCDEF'))).values()  # doctest: +NORMALIZE_WHITESPACE
     [array([[ 0,  6, 12],
             [ 0,  6, 12],
             [ 0,  6, 12]]),
@@ -512,23 +511,20 @@ def discrete_clipping_params(ts, capacity=100, rate_limit=float('inf')):
     Returns:
       2-tuple: Timestamp of the start and end of the period of the maximum clipped integrated increase
 
-    >>> t = ['2014-12-09T00:00', '2014-12-09T00:15', '2014-12-09T00:30', '2014-12-09T00:45', '2014-12-09T01:00', '2014-12-09T01:15', '2014-12-09T01:30', '2014-12-09T01:45']
-    >>> import pandas as pd
-    >>> ts = pd.Series([217, 234, 235, 231, 219, 219, 231, 232], index=pd.to_datetime(t))
-    >>> import numpy
-    >>> (discrete_clipping_params(ts, capacity=60000) ==
-    ... (numpy.datetime64('2014-12-09T00:15:00.000000000+0000'),
-    ... numpy.datetime64('2014-12-09T01:45:00.000000000+0000'),
-    ... 54555.882353782654,
-    ... 219))
+    >> t = ['2014-12-09T00:00', '2014-12-09T00:15', '2014-12-09T00:30', '2014-12-09T00:45', '2014-12-09T01:00', '2014-12-09T01:15', '2014-12-09T01:30', '2014-12-09T01:45']
+    >> ts = pd.Series([217, 234, 235, 231, 219, 219, 231, 232], index=pd.to_datetime(t))
+    >> (discrete_clipping_params(ts, capacity=60000) ==
+    .. {'integral': 54555.882352942499, 't0': pd.Timestamp('2014-12-09 00:15:00'),
+    ..  't1': pd.Timestamp('2014-12-09 01:45:00'),
+    .. 'threshold': 219})
     True
-    >>> (discrete_clipping_params(ts, capacity=30000) ==
-    ... (numpy.datetime64('2014-12-09T00:15:00.000000000+0000'),
-    ... numpy.datetime64('2014-12-09T00:30:00.000000000+0000'),
-    ... 562.5,
-    ... 234))
+    >> (discrete_clipping_params(ts, capacity=30000) ==
+    .. {'integral': 5638.2352941179997, 't0': pd.Timestamp('2014-12-09 00:15:00'),
+    .. 't1': pd.Timestamp('2014-12-09 01:45:00'), 
+    .. 'threshold': 231})
     True
     """
+    raise NotImplementedError("Doesn't work. Returns incorrect, overly conservative threshold values.")
     #index_type = ts.index.dtype
     #ts2 = ts.copy()
     ts.index = ts.index.astype(np.int64)
@@ -565,10 +561,10 @@ def square_off(series, time_delta=None, transition_seconds=1):
     2016-07-31 00:00:05.500000    2
     dtype: int64
     >>> square_off(pd.Series(range(2), index=pd.date_range('2014-01-01', periods=2, freq='15min')), transition_seconds=2.5)  # doctest: +NORMALIZE_WHITESPACE
-    2012-01-01 00:00:00           0
-    2012-01-01 00:14:57.500000    0
-    2012-01-01 00:15:00           1
-    2012-01-01 00:29:57.500000    1
+    2014-01-01 00:00:00           0
+    2014-01-01 00:14:57.500000    0
+    2014-01-01 00:15:00           1
+    2014-01-01 00:29:57.500000    1
     dtype: int64
     """
     if time_delta:
@@ -596,21 +592,18 @@ def clipping_threshold(ts, capacity=100, rate_limit=10):
       rate_limit: Maximum rate at which funds or energy can be expended (in $/s or Watts)
         The clipping threshold is limitted to no less than the peak power (price rate) minus this rate_limit
 
-    TODO:
-      Return answer as a dict
-
     Returns:
-      2-tuple: Timestamp of the start and end of the period of the maximum clipped integrated increase
+      dict: Timestamp of the start and end of the period of the maximum clipped integrated increase
 
     >>> t = ['2014-12-09T00:00', '2014-12-09T00:15', '2014-12-09T00:30', '2014-12-09T00:45', '2014-12-09T01:00', '2014-12-09T01:15', '2014-12-09T01:30', '2014-12-09T01:45']
     >>> import pandas as pd
     >>> ts = pd.Series([217, 234, 235, 231, 219, 219, 231, 232], index=pd.to_datetime(t))
-    >>> clipping_threshold(ts, capacity=60000)
-    219
-    >>> clipping_threshold(ts, capacity=30000)
-    234
+    >>> clipping_threshold(ts, capacity=60000)  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
+    218.13...
+    >>> clipping_threshold(ts, capacity=30000)  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
+    224.15...
     """
-    params = discrete_clipping_params(ts, capacity=capacity, rate_limit=rate_limit)
+    params = clipping_params(ts, capacity=capacity, rate_limit=rate_limit)
     if params:
         return params['threshold']
     return None
@@ -674,7 +667,7 @@ def simulate(t=1000, poly=(0.,), sinusoids=None, sigma=0, rw=0, irw=0, rrw=0):
     2    4
     dtype: float64
     >>> all(simulate(t=50, sinusoids=((1,2,3),)) == simulate(t=range(50), sinusoids=((1,2,3),)))
-    True   
+    True
     >>> any(simulate(t=100))
     False
     >>> abs(simulate(sinusoids=42.42).values[1] + simulate(sinusoids=42.42).values[-1]) < 1e-10
@@ -741,14 +734,14 @@ def normalize_symbols(symbols, *args, **kwargs):
       list of str: list of cananical ticker symbol strings (typically after .upper().strip())
 
     Examples:
-      >>> normalize_symbols("Goog")
-      ["GOOG"]
+      >>> normalize_symbols("Goog,AAPL")
+      ['GOOG', 'AAPL']
       >>> normalize_symbols("  $SPX   ", " aaPL ")
-      ["$SPX", "AAPL"]
+      ['$SPX', 'AAPL']
       >>> normalize_symbols("  $SPX   ", " aaPL ", postprocess=str)
-      ["$SPX", "aaPL"]
+      ['$SPX', 'aaPL']
       >>> normalize_symbols(["$SPX", ["GOOG", "AAPL"]])
-      ["$SPX", "GOOG", "AAPL"]
+      ['GOOG', 'AAPL', '$SPX']
       >>> normalize_symbols("$spy", ["GOOGL", "Apple"], postprocess=str)
       ['$spy', 'GOOGL', 'Apple']
     """
