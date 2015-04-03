@@ -134,7 +134,7 @@ def get_symbols_from_list(list_name):
       # If you've installed the QSTK Quantitative analysis toolkit 
       # you'll get a list of the symbols that were members of the S&P 500 in 2012.
       # Otherwise you'll get an empty list.
-      >>> len(get_symbols_from_list('sp5002012')) in (0, 501)
+      >> len(get_symbols_from_list('sp5002012')) in (0, 501)
       True
     """
     try:
@@ -163,13 +163,13 @@ def make_symbols(symbols, *args):
       pug.dj.db.normalize_names
 
     Examples:
-      >>> make_symbols("Goog")
+      >> make_symbols("Goog")
       ["GOOG"]
-      >>> make_symbols("  $SPX   ", " aaPL ")
+      >> make_symbols("  $SPX   ", " aaPL ")
       ["$SPX", "AAPL"]
-      >>> make_symbols(["$SPX", ["GOOG", "AAPL"]])
+      >> make_symbols(["$SPX", ["GOOG", "AAPL"]])
       ["$SPX", "GOOG", "AAPL"]
-      >>> make_symbols(" $Spy, Goog, aAPL ")
+      >> make_symbols(" $Spy, Goog, aAPL ")
       ["$SPY", "GOOG", "AAPL"]
     """
     if (      (hasattr(symbols, '__iter__') and not any(symbols))
@@ -382,7 +382,7 @@ def insert_crossings(ts, thresh):
 def get_integrator(integrator):
     """Return the scipy.integrator indicated by an index, name, or integrator_function
 
-    >>> get_integrator(0)
+    >> get_integrator(0)
     """
     integrator_types = set(['trapz', 'cumtrapz', 'simps', 'romb'])
     integrator_funcs = [integrate.trapz, integrate.cumtrapz, integrate.simps, integrate.romb]
