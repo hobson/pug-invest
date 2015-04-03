@@ -189,11 +189,11 @@ def make_symbols(symbols, *args):
 def make_time_series(x, t=pd.Timestamp(datetime.datetime(1970,1,1)), freq=None):
     """Convert a 2-D array of time/value pairs (or pair of time/value vectors) into a pd.Series time-series
 
-    >>> make_time_series(range(3))  # doctest: +NORMALIZE_WHITESPACE
-    1970-01-01 00:00:00    NaN
-    1970-01-01 00:15:00    NaN
-    1970-01-01 00:30:00    NaN
-    dtype: int64
+    >>> make_time_series(range(3))  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
+    1970-01-01 00:00:00   NaN
+    1970-01-01 00:15:00   NaN
+    1970-01-01 00:30:00   NaN
+    dtype: float64
     """
     if isinstance(x, pd.DataFrame):
         x = pd.Series(x[x.columns[0]])
@@ -449,11 +449,10 @@ def clipping_params(ts, capacity=100, rate_limit=float('inf'), method=None, max_
     >>> t = ['2014-12-09T00:00', '2014-12-09T00:15', '2014-12-09T00:30', '2014-12-09T00:45', '2014-12-09T01:00', '2014-12-09T01:15', '2014-12-09T01:30', '2014-12-09T01:45']
     >>> import pandas as pd
     >>> ts = pd.Series([217, 234, 235, 231, 219, 219, 231, 232], index=pd.to_datetime(t))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-    >>> clipping_params(ts, capacity=60000)
-    (54555.88..., 219)
-    True
-    >>> clipping_params(ts, capacity=30000)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-    (562.5, 234)
+    >>> clipping_params(ts, capacity=60000)['threshold']  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    218.13...
+    >>> clipping_params(ts, capacity=30000)['threshold']  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    224.15358... 
     """
     VALID_METHODS = ['L-BFGS-B', 'TNC', 'SLSQP', 'COBYLA']
     # print('in clipping params for ts.index={0} and method={1}'.format(ts.index[0], method))
