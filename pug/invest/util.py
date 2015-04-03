@@ -165,14 +165,14 @@ def make_symbols(symbols, *args):
       pug.dj.db.normalize_names
 
     Examples:
-      >> make_symbols("Goog")
-      ["GOOG"]
-      >> make_symbols("  $SPX   ", " aaPL ")
-      ["$SPX", "AAPL"]
-      >> make_symbols(["$SPX", ["GOOG", "AAPL"]])
-      ["$SPX", "GOOG", "AAPL"]
-      >> make_symbols(" $Spy, Goog, aAPL ")
-      ["$SPY", "GOOG", "AAPL"]
+      >>> make_symbols("Goog")
+      ['GOOG']
+      >>> make_symbols("  $SPX   ", " aaPL ")
+      ['$SPX', 'AAPL']
+      >>> make_symbols(["$SPX", ["GOOG", "AAPL"]])
+      ['GOOG', 'AAPL', '$SPX']
+      >>> make_symbols(" $Spy, Goog, aAPL ")
+      ['$SPY', 'GOOG', 'AAPL']
     """
     if (      (hasattr(symbols, '__iter__') and not any(symbols))
         or (isinstance(symbols, (list, tuple, Mapping)) and not symbols)):
@@ -182,7 +182,7 @@ def make_symbols(symbols, *args):
         # try:
         #     return list(set(dataobj.get_symbols_from_list(symbols)))
         # except:
-        return [s.upper().strip() for s in symbols.split(',')]
+        return [s.upper().strip() for s in (symbols.split(',') + list(str(a) for a in args))]
     else:
         ans = []
         for sym in (list(symbols) + list(args)):
