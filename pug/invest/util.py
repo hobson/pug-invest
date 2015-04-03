@@ -415,10 +415,10 @@ def clipped_area(ts, thresh=0, integrator=integrate.trapz):
     >>> ts = pd.Series([217, 234, 235, 231, 219, 219, 231, 232], index=pd.to_datetime(t))
     >>> clipped_area(ts, thresh=230)  # doctest: +ELLIPSIS
     8598.52941...
-    >>> clipped_area(ts, thresh=234)  # doctest: +ELLIPSIS
+    >>> clipped_area(ts, thresh=234)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     562.5
-    >>> clipped_area(pd.Series(ts.values, index=ts.index.values.astype(pd.np.int64)), thresh=234)  # doctest: +ELLIPSIS
-    562.5    
+    >>> clipped_area(pd.Series(ts.values, index=ts.index.values.astype(pd.np.int64)), thresh=234)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    562.5
     """
     integrator = get_integrator(integrator or 0)
     ts = insert_crossings(ts, thresh) - thresh
@@ -449,13 +449,12 @@ def clipping_params(ts, capacity=100, rate_limit=float('inf'), method=None, max_
 
     >>> t = ['2014-12-09T00:00', '2014-12-09T00:15', '2014-12-09T00:30', '2014-12-09T00:45', '2014-12-09T01:00', '2014-12-09T01:15', '2014-12-09T01:30', '2014-12-09T01:45']
     >>> import pandas as pd
-    >>> ts = pd.Series([217, 234, 235, 231, 219, 219, 231, 232], index=pd.to_datetime(t))
-    >>> (clipping_params(ts, capacity=60000) ==
-    ... (54555.882353782654, 219))
+    >>> ts = pd.Series([217, 234, 235, 231, 219, 219, 231, 232], index=pd.to_datetime(t))  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    >>> clipping_params(ts, capacity=60000)
+    (54555.88..., 219)
     True
-    >>> (clipping_params(ts, capacity=30000) ==
-    ... (562.5, 234))
-    True
+    >>> clipping_params(ts, capacity=30000)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    (562.5, 234)
     """
     VALID_METHODS = ['L-BFGS-B', 'TNC', 'SLSQP', 'COBYLA']
     # print('in clipping params for ts.index={0} and method={1}'.format(ts.index[0], method))
