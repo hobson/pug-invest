@@ -127,10 +127,13 @@ def clean_dataframes(dfs):
 def get_symbols_from_list(list_name):
     """Retrieve a named (symbol list name) list of strings (symbols)
 
+    If you've installed the QSTK Quantitative analysis toolkit 
+        `get_symbols_from_list('sp5002012')` will produce a list of the symbols that
+        were members of the S&P 500 in 2012.
+    Otherwise an import error exception will be raised.
+        If the symbol list cannot be found you'll get an empty list returned
+
     Example:
-      # If you've installed the QSTK Quantitative analysis toolkit 
-      # you'll get a list of the symbols that were members of the S&P 500 in 2012.
-      # Otherwise you'll get an empty list.
       >> len(get_symbols_from_list('sp5002012')) in (0, 501)
       True
     """
@@ -138,6 +141,8 @@ def get_symbols_from_list(list_name):
         # quant software toolkit has a method for retrieving lists of symbols like S&P500 for 2012 with 'sp5002012'
         import QSTK.qstkutil.DataAccess as da
         dataobj = da.DataAccess('Yahoo')
+    except ImportError:
+        raise
     except:
         return []
     try:
@@ -746,11 +751,10 @@ def normalize_symbols(symbols, *args, **kwargs):
     """
     postprocess = kwargs.get('postprocess', None) or str.upper
     if (      (hasattr(symbols, '__iter__') and not any(symbols))
-        or (isinstance(symbols, (list, tuple, Mapping)) and not symbols)):
+        or (isinstance(symbols, (list, tuple, Mapping)) and (not symbols or not any(symbols)))):
         return []
     args = normalize_symbols(args, postprocess=postprocess)
     if isinstance(symbols, basestring):
-        # get_symbols_from_list seems robust to string normalizaiton like .upper()
         try:
             return list(set(get_symbols_from_list(symbols))) + args
         except:
