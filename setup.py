@@ -4,8 +4,8 @@ __namespace_package__ = 'pug'
 # the subpackage that this installer is providing that you'd import like __import__(__namespace_package__ + '.' + '__subpackage__')
 __subpackage__ = 'invest'
 # the name as it will appear in the pypi cheeseshop repositor, not the name you'd use to import it
-project_name = '{}-{}'.format(__namespace_package__, __subpackage__)
-package_name = '{}.{}'.format(__namespace_package__, __subpackage__)
+project_name = '{}'.format(__namespace_package__) + ('-' + __subpackage__ if __subpackage__ else '')
+package_name = '{}'.format(__namespace_package__) + ('.' + __subpackage__ if __subpackage__ else '')
 
 from setuptools import find_packages
 from distutils.core import setup
@@ -52,26 +52,26 @@ print('Packages being installed: {}'.format(packages))
 install_requires = [
     'wsgiref==0.1.2',
     'six==1.9.0',
-#    'setuptools>=14.3',
+    'progressbar2==2.7.3',
     'pyzmq==14.5.0',
     'Unidecode==0.4.16',
     'cffi==0.8.6',
     'chardet==2.3.0',
     'pyOpenSSL==0.14',
-    'pytz==2015.2', 
+    'pytz==2015.2',
     'python-dateutil>=2.4.1',
     'pandas>=0.15.2',
-    'xlrd==0.9.3', 'Pillow==2.7',
+    'xlrd==0.9.3',
+    'Pillow==2.7',
     'fuzzywuzzy==0.5.0',
     'python-Levenshtein==0.12.0',
-    'progressbar2==2.7.3',
     'python-slugify==0.1.0',
     'matplotlib==1.4.3',
     'numpy==1.9.2',
     'scipy>=0.15.1',
     'ConcurrentPandas==0.1.0',
 
-    'pug-nlp>=0.0.15',
+    'pug-nlp>=0.0.18',
     ]
 print('install_requires: {}'.format(install_requires))
 
