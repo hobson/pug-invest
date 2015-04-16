@@ -71,7 +71,7 @@ install_requires = [
     'scipy>=0.15.1',
     'ConcurrentPandas==0.1.0',
 
-    'pug-nlp>=0.0.18',
+    'pug-nlp>=0.0.19',
     ]
 print('install_requires: {}'.format(install_requires))
 
