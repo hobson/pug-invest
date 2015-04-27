@@ -29,10 +29,10 @@ print('Found package info in {}: {}'.format(package_info_path, env))
 
 version = env.get('__version__', '0.0.1')
 package_docstring = env.get('__doc__', '`{}` python package'.format(project_name))
-description = package_docstring.split('\n')[0]
+description = "Investment (time series) quantitative analysis utilities. A subpackage of the pug namespace package."
 long_description = package_docstring
-__url__  = env.get('__url__', 'http://github.com/hobson/')
-__authors__  = env.get('__authors__', ('Hobson <hobson@totalgood.com>',))
+__url__ = env.get('__url__', 'http://github.com/hobson/')
+__authors__ = env.get('__authors__', ('Hobson <hobson@totalgood.com>',))
 try:
     long_description = open('README.rst', 'r').read()
 except:  # (IOError, ImportError, OSError, RuntimeError):
@@ -42,11 +42,9 @@ except:  # (IOError, ImportError, OSError, RuntimeError):
 dependency_links = [] #  ['http://github.com/hobson/pug-nlp/tarball/master#egg=pug-nlp-master'] 
 EXCLUDE_FROM_PACKAGES = []
 
-
 print('Installing package named {} from the {} project. . .'.format(package_name, project_name))
 packages = list(set([package_name] + list(find_packages(exclude=EXCLUDE_FROM_PACKAGES))))
 print('Packages being installed: {}'.format(packages))
-
 
 # sudo yum install libjpeg-devel openjpeg-devel
 install_requires = [
@@ -73,33 +71,33 @@ install_requires = [
 
     'pug-nlp>=0.0.19',
     ]
-print('install_requires: {}'.format(install_requires))
+# print('install_requires: {}'.format(install_requires))
 
 
 setup(
     name=project_name,
-    packages=packages,
+    packages=find_packages(exclude=EXCLUDE_FROM_PACKAGES),
     namespace_packages=[__namespace_package__],
 
     # install non-.py files listed in MANIFEST.in (.js, .html, .txt, .md, etc)
-    include_package_data = True,
-    install_requires = install_requires,
-    dependency_links = dependency_links,
-    # scripts=['pug/bin/push.py'],
+    include_package_data=True,
+    install_requires=install_requires,
+    dependency_links=dependency_links,
+    # scripts=['pug/bin/install_requirements'],
     # entry_points={'console_scripts': [
-    #     'push=pug.bin.push:main',
+    #     'test-ann = pug.tests:main',
     # ]},
-    version = version,
-    description = description,
-    long_description = long_description,
-    author = ', '.join(__authors__),
-    author_email = __authors__[0].split('<')[1].strip().strip('>'),
+    version=version,
+    description=description,
+    long_description=long_description,
+    author=', '.join(__authors__),
+    author_email=__authors__[0].split('<')[1].strip().strip('>'),
 
-    #tests_require = ['django-setuptest', 'south'],
-    #test_suite = 'setuptest.setuptest.SetupTestSuite',
-    #cmdclass = {'test': test},
+    #tests_require=['django-setuptest', 'south'],
+    #test_suite='setuptest.setuptest.SetupTestSuite',
+    #cmdclass={'test': test},
     # this would install the master branch from github
-    # url = __url__,
+    # url=__url__,
 
     # Force setup.py to use the latest github master source files rather than the cheeseshop tarball: 
     download_url = "{}/tarball/master".format(__url__),
@@ -107,9 +105,9 @@ setup(
     classifiers = [
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.7",
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Environment :: Other Environment",
-        # "Environment :: Console",
+        "Environment :: Console",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
