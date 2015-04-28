@@ -1,20 +1,24 @@
 """GOF = Goodness of Fit metric
 
 Examples:
-
->>> rmse([1,2,3,4], [4,5,6,7])
-2
->>> log_loss([[1,2],[3,4]], [[4,5],[6,7]])
+  >>> rmse([1,2,3,4], [4,5,6,7])
+  2
+  >>> log_loss([[0, 1],[0, 1]], [[.6,.4],[.25,.75]])  # doctest: +ELLIPSIS
+  1.20397...
+  >>> llfun([[0, 1],[0, 1]], [[.6,.4],[.25,.75]])  # doctest: +ELLIPSIS
+  1.20397...
+  >>> metrics.log_loss([1,1], [[.6,.4],[.25,.75]])  # doctest: +ELLIPSIS
+  1.20397...
 """
 
+from scikitlearn import metrics
 import pug.invest.util
 rmse = pug.invest.util.rmse
 import scipy as sp
-import pandas as pd
-np = pd.np
+from pandas import np
 
 
-def log_loss(predicted, actual):
+def log_loss(actual, predicted):
     """Log of the loss (error) summed over all entries
 
     The negative of the logarithm of the frequency (probability) of the predicted
