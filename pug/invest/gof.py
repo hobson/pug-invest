@@ -11,7 +11,7 @@ Examples:
   1.20397...
 """
 
-from scikitlearn import metrics
+from sklearn import metrics
 import pug.invest.util
 rmse = pug.invest.util.rmse
 import scipy as sp
