@@ -13,6 +13,7 @@ np = pd.np
 from scipy import integrate
 
 from matplotlib import pyplot as plt
+import seaborn
 from scipy.optimize import minimize
 
 from pug.nlp.util import listify
@@ -34,12 +35,12 @@ def rms(x):
         x (seq of float): A sequence of numerical values
 
     Returns:
-        The square root of the average of the squares of the values 
+        The square root of the average of the squares of the values
 
         math.sqrt(sum(x_i**2 for x_i in x) / len(x))
 
         or
-        
+
         return (np.array(x) ** 2).mean() ** 0.5
 
     >>> rms([0, 2, 4, 4])
@@ -50,11 +51,11 @@ def rms(x):
     except:
         x = np.array(dropna(x))
         invN = 1.0 / len(x)
-        return (sum(invN * (x_i**2) for x_i in x))**.5
+        return (sum(invN * (x_i ** 2) for x_i in x)) ** .5
 
 
 def rmse(target, prediction, relative=False, percent=False):
-    """ "Root Mean Square Error" 
+    """Root Mean Square Error
 
     This seems like a simple formula that you'd never need to create a function for.
     But my mistakes on coding challenges have convinced me that I do need it,
@@ -281,7 +282,6 @@ def pandas_mesh(df):
     return OrderedDict((df.columns[i], m) for i, m in enumerate([X, Y] + Zs))
 
 
-
 def integrated_change(ts, integrator=integrate.trapz, clip_floor=None, clip_ceil=float('inf')):
     """Total value * time above the starting value within a TimeSeries"""
     integrator = get_integrator(integrator)
@@ -382,6 +382,7 @@ def insert_crossings(ts, thresh):
 
     # print((toc-tic0)*1000); 
     return ts
+
 
 def get_integrator(integrator):
     """Return the scipy.integrator indicated by an index, name, or integrator_function
@@ -783,3 +784,127 @@ def frame_bollinger(df, window=20, sigma=1., plot=False):
     for col in df.columns:
         bol[col] = series_bollinger(df[col], plot=False)
     return bol
+
+
+def double_sinc(T_0=120, T_N=240, T_s=0.01, A=[1, .9], sigma=0.01, T_cyc=10, N_cyc=[3, 2], verbosity=0):
+    # T0, TN, A, sigma = np.array(T0), np.array(TN), np.array(A), np.array(sigma)
+    N = int(T_N / T_s)
+    t = np.arange(0, T_N, T_s)
+    # t_mid = 0.5 * (t[-1] + t[0])
+    e = sigma * np.random.randn(N)
+    x = A[0] * np.sinc(((t - T_0) * N_cyc[0] * 2 / T_cyc) % T_cyc) * np.sinc((t - T_0) * N_cyc[1] * 2 / t[-1])
+    y = x + e
+    df = pd.DataFrame({'x': x, 'y': y}, index=t)
+    if verbosity > 0:
+        df.plot()
+        plt.show(block=False)
+    return df
+
+
+def sinc_signals(T0=[60, 120], TN=[240, 160], A=[1, .9], sigma=[.03, .02], T_cyc=10, Ts=0.01):
+    T0, TN, A, sigma = np.array(T0), np.array(TN), np.array(A), np.array(sigma)
+    N1 = int(TN[0] / Ts)
+    N2 = int(TN[1] / Ts)
+    i1 = np.arange(0, N1)
+    i2 = np.arange(0, N2)
+    t1 = T0[0] + i1 * Ts
+    t2 = t1[i2 + int((T0[1] - T0[0]) / Ts)]
+    e1 = sigma[0] * np.random.randn(N1)
+    e2 = sigma[1] * np.random.randn(N2)
+    signal = A[0] * np.sinc((t1[i1] * 5. / T_cyc) % T_cyc) * np.sinc((t1[i1]) * 4 / t1[-1])
+    x1 = signal + e1
+    x2 = signal[i2 + int((T0[1] - T0[0]) / Ts)] + e2
+    df = pd.DataFrame({'signal 1': pd.Series(x1, index=t1), 'signal 2': pd.Series(x2, index=t2)})
+    df.plot()
+    plt.show(block=False)
+    return df
+
+
+def smooth(x, window_len=11, window='hanning', fill='reflect'):
+    """smooth the data using a window with requested size.
+
+    Convolve a normalized window with the signal.
+
+    input:
+        x: signal to be smoothed
+        window_len: the width of the smoothing window
+        window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
+            flat window will produce a moving average smoothing.
+        fill: 'reflect' means that the signal is reflected onto both ends before filtering
+
+    output:
+        the smoothed signal
+
+    example:
+
+    t = linspace(-2, 2, 0.1)
+    x = sin(t) + 0.1 * randn(len(t))
+    y = smooth(x)
+
+    import seaborn
+    pd.DataFrame({'x': x, 'y': y}, index=t).plot()
+
+    SEE ALSO:
+      numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman
+      numpy.convolve
+      scipy.signal.lfilter
+
+    TODO: the window parameter could be the window itself if an array instead of a string
+    NOTE: length(output) != length(input), to correct this:  instead of just y.
+
+    References:
+      http://wiki.scipy.org/Cookbook/SignalSmooth
+    """
+
+    # force window_len to be an odd integer so it can be symmetrically applied
+    window_len = int(window_len)
+    window_len += int(not (window_len % 2))
+    half_len = (window_len - 1) / 2
+
+    if x.ndim != 1:
+        raise ValueError("smooth only accepts 1 dimension arrays.")
+    if x.size < window_len:
+        raise ValueError("Input vector needs to be bigger than window size.")
+    if window_len < 3:
+        return x
+    if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+        raise ValueError("The window arg ({}) should be 'flat', 'hanning', 'hamming', 'bartlett', or 'blackman'"
+                         .format(window))
+
+    s = np.r_[x[window_len - 1:0:-1], x, x[-1:-window_len:-1]]
+
+    window = window.strip().lower()
+    if window is None or window == 'flat':
+        w = np.ones(window_len, 'd')
+    else:
+        w = getattr(np, window)(window_len)
+
+    y = np.convolve(w / w.sum(), s, mode='valid')
+
+    return y[half_len + 1:-half_len]
+
+
+def time_shift(s1, s2, smoother=None, index_and_value=False):
+    """Estimate the time shift between two signals based on their cross correlation
+
+    >>> double_sinc()
+    """
+    try:
+        s1 = s1.dropna()
+        s1 = s1.values
+    except:
+        pass
+    try:
+        s2 = s2.dropna()
+        s2 = s2.values
+    except:
+        pass
+    try:
+        xcorr = smoother(np.correlate(s1, s2), window_len=min(11, int(0.15 * len(s1))))
+    except:
+        xcorr = np.correlate(s1, s2)
+    i_max = np.argmax(xcorr)
+    if index_and_value:
+        return i_max, xcorr[i_max]
+    else:
+        return i_max
