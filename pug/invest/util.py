@@ -900,11 +900,19 @@ def smooth(x, window_len=11, window='hanning', fill='reflect'):
 def estimate_shift(x, y, smoother=None, index_and_value=False, ignore_edge=1/3., method='valid'):
     """Estimate the time shift between two signals based on their cross correlation
 
-    >>> x, y = np.random.randn(50,2).T
-    >>> x[9::2] = x[9::2] + y[0:-9:2]
-    >>> x[10::2] = 0.1 * x[10::2]
-    >>> estimate_shift(x, y)
-    9
+    >>> x, y = np.matrix([[0.5, 0.01], [0.01, 1.0]]) * np.random.randn(50,2).T
+    >>> x, y = np.squeeze(np.asarray(x)), np.squeeze(np.asarray(y))
+    >>> x[:50-8] = y[8:50]
+    >>> estimate_shift(x, y, 'full')
+    -8
+    >>> estimate_shift(x, y, 'valid')
+    -8
+    >>> estimate_shift(y, x, 'full')
+    8
+    >>> estimate_shift(y, x, 'valid')
+    8
+    >>> estimate_shift(y, x)
+    8
     """
     method = method or 'valid'
     try:
@@ -939,10 +947,11 @@ def estimate_shift(x, y, smoother=None, index_and_value=False, ignore_edge=1/3.,
         pass
 
     offset = imax = c.argmax()
+    offset = offset - yi0
     if method == 'full':
         offset = imax - Nx + 1
     # elif method == 'valid':
-    #     offset = imax
+    #     offset = imax - yi0
     elif method == 'same':
         raise NotImplementedError("Unsure what index value to report for a correlation maximum at i = {}"
                                   .format(imax))
