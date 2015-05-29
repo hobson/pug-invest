@@ -15,6 +15,7 @@ from scipy import integrate
 from matplotlib import pyplot as plt
 import seaborn
 from scipy.optimize import minimize
+from scipy.signal import correlate
 
 from pug.nlp.util import listify
 
@@ -75,21 +76,22 @@ def rmse(target, prediction, relative=False, percent=False):
     if relative:
         denom = target
         # Avoid ZeroDivisionError: divide by prediction rather than target where target==0
-        denom[denom==0] = prediction[denom==0]
+        denom[denom == 0] = prediction[denom == 0]
         # If the prediction and target are both 0, then the error is 0 and should be included in the RMSE
         # Otherwise, the np.isinf() below would remove all these zero-error predictions from the array.
-        denom[(denom==0) & (target==0)] = 1
+        denom[(denom == 0) & (target == 0)] = 1
         err = (err / denom)
         err = err[(~ np.isnan(err)) & (~ np.isinf(err))]
-    return 100*rms(err) if percent else rms(err)
+    return 100 * rms(err) if percent else rms(err)
 
 
 def blended_rolling_apply(series, window=2, fun=pd.np.mean):
-    new_series = pd.Series(np.fromiter((fun(series[:i+1]) for i in range(window - 1)), type(series.values[0])), index=series.index[:window - 1]).append(
-        pd.rolling_apply(series.copy(), window, fun)[window - 1:])
-    assert len(series) == len(new_series), ( 
-            "blended_rolling_apply should always return a series of the same length! len(series) = {0} != {1} = len(new_series".format(
-                len(series), len(new_series)))
+    new_series = pd.Series(np.fromiter((fun(series[:i + 1]) for i in range(window - 1)),
+                           type(series.values[0])), index=series.index[:window - 1]).append(
+                               pd.rolling_apply(series.copy(), window, fun)[window - 1:])
+    assert len(series) == len(new_series), (
+        "blended_rolling_apply should always return a series of the same length!\n"
+        " len(series) = {0} != {1} = len(new_series".format(len(series), len(new_series)))
     assert not any(np.isnan(val) or val is None for val in new_series)
     return new_series
 
@@ -109,7 +111,7 @@ def clean_dataframe(df):
 def clean_dataframes(dfs):
     """Fill NaNs with the previous value, the next value or if all are NaN then 1.0
 
-    TODO: 
+    TODO:
       Linear interpolation and extrapolation
 
     Arguments:
@@ -125,10 +127,11 @@ def clean_dataframes(dfs):
     else:
         return [clean_dataframe(dfs)]
 
+
 def get_symbols_from_list(list_name):
     """Retrieve a named (symbol list name) list of strings (symbols)
 
-    If you've installed the QSTK Quantitative analysis toolkit 
+    If you've installed the QSTK Quantitative analysis toolkit
         `get_symbols_from_list('sp5002012')` will produce a list of the symbols that
         were members of the S&P 500 in 2012.
     Otherwise an import error exception will be raised.
@@ -175,8 +178,8 @@ def make_symbols(symbols, *args):
       >>> make_symbols(" $Spy, Goog, aAPL ")
       ['$SPY', 'GOOG', 'AAPL']
     """
-    if (      (hasattr(symbols, '__iter__') and not any(symbols))
-        or (isinstance(symbols, (list, tuple, Mapping)) and not symbols)):
+    if (hasattr(symbols, '__iter__') and not any(symbols)) \
+            or (isinstance(symbols, (list, tuple, Mapping)) and not symbols):
         return []
     if isinstance(symbols, basestring):
         # # FIXME: find a direct API for listing all possible symbols
@@ -192,7 +195,7 @@ def make_symbols(symbols, *args):
         return list(set(ans))
 
 
-def make_time_series(x, t=pd.Timestamp(datetime.datetime(1970,1,1)), freq=None):
+def make_time_series(x, t=pd.Timestamp(datetime.datetime(1970, 1, 1)), freq=None):
     """Convert a 2-D array of time/value pairs (or pair of time/value vectors) into a pd.Series time-series
 
     >>> make_time_series(range(3))  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
@@ -205,7 +208,7 @@ def make_time_series(x, t=pd.Timestamp(datetime.datetime(1970,1,1)), freq=None):
         x = pd.Series(x[x.columns[0]])
     elif not isinstance(x, pd.Series) and (not isinstance(t, (pd.Series, pd.Index, list, tuple)) or not len(t)):
         #warnings.warn("Coercing a non-Series")
-        if len(x) == 2: 
+        if len(x) == 2:
             t, x = listify(x[0]), listify(x[1])
         elif len(x) >= 2:
             try:
@@ -219,14 +222,18 @@ def make_time_series(x, t=pd.Timestamp(datetime.datetime(1970,1,1)), freq=None):
         else:
             x = pd.Series(listify(x), index=listify(t))
     if not isinstance(x, pd.Series):
-        raise TypeError("`pug.invest.util.make_time_series(x, t)` expects x to be a type that can be coerced to a Series object, but it's type is: {0}".format(type(x)))
+        raise TypeError("`pug.invest.util.make_time_series(x, t)` expects x to be a type that"
+                        " can be coerced to a Series object, but it's type is: {0}"
+                        .format(type(x)))
     # By this point x must be a Series, only question is whether its index needs to be converted to a DatetimeIndex
-    if x.index[0] != 0 and isinstance(x.index[0], (datetime.date, datetime.datetime, pd.Timestamp, basestring, float, np.int64, int)):
+    if x.index[0] != 0 and isinstance(x.index[0], (datetime.date, datetime.datetime, pd.Timestamp,
+                                      basestring, float, np.int64, int)):
         t = x.index
     elif isinstance(t, (datetime.date, datetime.datetime, pd.Timestamp, basestring, float, np.int64, int)):
         if not freq:
             freq = '15min'
-            warnings.warn('Assumed time series freq to be {0} though no freq argument was provided!'.format(freq), RuntimeWarning)
+            warnings.warn('Assumed time series freq to be {0} though no freq argument was provided!'
+                          .format(freq), RuntimeWarning)
         t = pd.date_range(t, periods=len(x), freq=freq)
     x = pd.Series(x, index=t)
     if isinstance(x, pd.Series):
@@ -244,7 +251,8 @@ def pandas_mesh(df):
       OrderedDict: column labels from the data frame are the keys, values are 2-D matrices
         All matrices have shape NxM, where N = len(set(df.iloc[:,0])) and M = len(set(df.iloc[:,1]))
 
-    >>> pandas_mesh(pd.DataFrame(np.arange(18).reshape(3,6), columns=list('ABCDEF'))).values()  # doctest: +NORMALIZE_WHITESPACE
+    >>> pandas_mesh(pd.DataFrame(np.arange(18).reshape(3,6),
+    ...                          columns=list('ABCDEF'))).values()  # doctest: +NORMALIZE_WHITESPACE
     [array([[ 0,  6, 12],
             [ 0,  6, 12],
             [ 0,  6, 12]]),
@@ -288,7 +296,7 @@ def integrated_change(ts, integrator=integrate.trapz, clip_floor=None, clip_ceil
     if clip_floor is None:
         clip_floor = ts[0]
     if clip_ceil < clip_floor:
-        polarity = -1 
+        polarity = -1
         offset, clip_floor, clip_ceil, = clip_ceil, clip_ceil, clip_floor
     else:
         polarity, offset = 1, clip_floor
@@ -300,7 +308,7 @@ def integrated_change(ts, integrator=integrate.trapz, clip_floor=None, clip_ceil
         integrator = getattr(integrate, integrator)
     integrator = integrator or integrate.trapz
     # datetime units converted to seconds (since 1/1/1970)
-    return integrator(clipped_values, ts.index.astype(np.int64) / 10**9)
+    return integrator(clipped_values, ts.index.astype(np.int64) / 10 ** 9)
 
 
 def insert_crossings(ts, thresh):
@@ -319,7 +327,7 @@ def insert_crossings(ts, thresh):
     ts.index = ts.index.astype(np.int64)
     # toc = time.clock();
     # print((toc-tic)*1000); tic = time.clock()
-    
+
     # value immediately before an upward thresh crossing, 6 ms
     preup = ts[(ts < thresh) & (ts.shift(-1) > thresh)]
     # toc = time.clock();
@@ -340,18 +348,21 @@ def insert_crossings(ts, thresh):
     # toc = time.clock();
     # print((toc-tic)*1000); tic = time.clock()
 
-    # upward slope (always positive) between preup and postup in units of "value" per nanosecond (timestamps convert to floats as nanoseconds), 0.04 ms
+    # upward slope (always positive) between preup and postup in units of
+    # "value" per nanosecond (timestamps convert to floats as nanoseconds), 0.04 ms
     slopeup = (postup.values - preup.values) / (postup.index.values - preup.index.values).astype(np.float64)
     # toc = time.clock();
     # print((toc-tic)*1000); tic = time.clock()
 
     # upward crossing point index/time, 0.04 ms
-    tup = preup.index.values +  ((thresh - preup.values) / slopeup).astype(np.int64)
+    tup = preup.index.values + ((thresh - preup.values) / slopeup).astype(np.int64)
     # toc = time.clock();
     # print((toc-tic)*1000); tic = time.clock()
 
-    # downward slope (always negative) between predown and postdown in units of "value" per nanosecond (timestamps convert to floats as nanoseconds), 0.03 ms
-    slopedown = (postdown.values - predown.values) / (postdown.index.values - predown.index.values).astype(np.float64)
+    # downward slope (always negative) between predown and postdown in units of
+    # "value" per nanosecond (timestamps convert to floats as nanoseconds), 0.03 ms
+    slopedown = (postdown.values - predown.values) / \
+                (postdown.index.values - predown.index.values).astype(np.float64)
     # toc = time.clock();
     # print((toc-tic)*1000); tic = time.clock()
 
@@ -366,21 +377,21 @@ def insert_crossings(ts, thresh):
     # print((toc-tic)*1000); tic = time.clock()
 
     # insert crossing points into time-series (if it had a regular sample period before, it won't now!), 2.0 ms
-    ts = ts.append(pd.Series(thresh*np.ones(len(tup)), index=index_type(tup.astype(np.int64))))
+    ts = ts.append(pd.Series(thresh * np.ones(len(tup)), index=index_type(tup.astype(np.int64))))
     # toc = time.clock();
     # print((toc-tic)*1000); tic = time.clock()
 
     # insert crossing points into time-series (if it had a regular sample period before, it won't now!), 1.9 ms
-    ts = ts.append(pd.Series(thresh*np.ones(len(tdown)), index=index_type(tdown.astype(np.int64))))
+    ts = ts.append(pd.Series(thresh * np.ones(len(tdown)), index=index_type(tdown.astype(np.int64))))
     # toc = time.clock();
     # print((toc-tic)*1000); tic = time.clock()
 
     # if you don't `sort_index()`, numerical integrators in `scipy.integrate` will give the wrong answer, 0.1 ms
     ts = ts.sort_index()
     # toc = time.clock();
-    # print((toc-tic)*1000); tic = time.clock()    # if you don't `sort_index()`, numerical integrators in `scipy.integrate` will give the wrong answer
-
-    # print((toc-tic0)*1000); 
+    # if you don't `sort_index()`, numerical integrators in `scipy.integrate` will give the wrong answer
+    # print((toc-tic)*1000); tic = time.clock()
+    # print((toc-tic0)*1000);
     return ts
 
 
@@ -415,21 +426,23 @@ def clipped_area(ts, thresh=0, integrator=integrate.trapz):
     References:
       http://nbviewer.ipython.org/gist/kermit666/5720498
 
-    >>> t = ['2014-12-09T00:00', '2014-12-09T00:15', '2014-12-09T00:30', '2014-12-09T00:45', '2014-12-09T01:00', '2014-12-09T01:15', '2014-12-09T01:30', '2014-12-09T01:45']
+    >>> t = ['2014-12-09T00:00', '2014-12-09T00:15', '2014-12-09T00:30', '2014-12-09T00:45',
+    ...      '2014-12-09T01:00', '2014-12-09T01:15', '2014-12-09T01:30', '2014-12-09T01:45']
     >>> import pandas as pd
     >>> ts = pd.Series([217, 234, 235, 231, 219, 219, 231, 232], index=pd.to_datetime(t))
     >>> clipped_area(ts, thresh=230)  # doctest: +ELLIPSIS
     8598.52941...
     >>> clipped_area(ts, thresh=234)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     562.5
-    >>> clipped_area(pd.Series(ts.values, index=ts.index.values.astype(pd.np.int64)), thresh=234)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    >>> clipped_area(pd.Series(ts.values, index=ts.index.values.astype(pd.np.int64)),
+    ...              thresh=234)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     562.5
     """
     integrator = get_integrator(integrator or 0)
     ts = insert_crossings(ts, thresh) - thresh
     ts = ts[ts >= 0]
     # timestamp is in nanoseconds (since 1/1/1970) but this converts it to seconds (SI units)
-    return integrator(ts, ts.index.astype(np.int64))  / 1.0e9
+    return integrator(ts, ts.index.astype(np.int64)) / 1.0e9
 
 
 def clipping_params(ts, capacity=100, rate_limit=float('inf'), method=None, max_attempts=100):
@@ -458,7 +471,7 @@ def clipping_params(ts, capacity=100, rate_limit=float('inf'), method=None, max_
     >>> clipping_params(ts, capacity=60000)['threshold']  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     218.13...
     >>> clipping_params(ts, capacity=30000)['threshold']  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-    224.15358... 
+    224.15358...
     """
     VALID_METHODS = ['L-BFGS-B', 'TNC', 'SLSQP', 'COBYLA']
     # print('in clipping params for ts.index={0} and method={1}'.format(ts.index[0], method))
@@ -490,7 +503,7 @@ def clipping_params(ts, capacity=100, rate_limit=float('inf'), method=None, max_
             attempts += 1
             thresh0 = bounds[0] + random.random() * (bounds[1] - bounds[0])
     else:
-        optimum = minimize(fun=cost_fun, x0=[thresh0], bounds=[bounds], args=(ts, capacity, bounds), method=method)    
+        optimum = minimize(fun=cost_fun, x0=[thresh0], bounds=[bounds], args=(ts, capacity, bounds), method=method)
     thresh = optimum.x[0]
     integral = clipped_area(ts, thresh=thresh)
     params = dict(optimum)
@@ -525,7 +538,7 @@ def discrete_clipping_params(ts, capacity=100, rate_limit=float('inf')):
     True
     >> (discrete_clipping_params(ts, capacity=30000) ==
     .. {'integral': 5638.2352941179997, 't0': pd.Timestamp('2014-12-09 00:15:00'),
-    .. 't1': pd.Timestamp('2014-12-09 01:45:00'), 
+    .. 't1': pd.Timestamp('2014-12-09 01:45:00'),
     .. 'threshold': 231})
     True
     """
@@ -624,8 +637,8 @@ def join_time_series(serieses, ignore_year=False, T_s=None, aggregator='mean'):
     Arguments:
       series (dict of Series): dictionary of named timestamp-indexed Series objects
       ignore_year (bool): ignore the calendar year, but not the season (day of year)
-         If True, the DataFrame index will be seconds since the beginning of the 
-         year in each Series index, i.e. midnight Jan 1, 2014 will have index=0 
+         If True, the DataFrame index will be seconds since the beginning of the
+         year in each Series index, i.e. midnight Jan 1, 2014 will have index=0
          as will Jan 1, 2010 if two Series start on those two dates.
       T_s (float): sample period in seconds (for downsampling)
       aggregator (str or func): e.g. 'mean', 'sum', np.std
@@ -884,27 +897,58 @@ def smooth(x, window_len=11, window='hanning', fill='reflect'):
     return y[half_len + 1:-half_len]
 
 
-def time_shift(s1, s2, smoother=None, index_and_value=False):
+def estimate_shift(x, y, smoother=None, index_and_value=False, ignore_edge=1/3., method='valid'):
     """Estimate the time shift between two signals based on their cross correlation
 
-    >>> double_sinc()
+    >>> x, y = np.random.randn(50,2).T
+    >>> x[9::2] = x[9::2] + y[0:-9:2]
+    >>> x[10::2] = 0.1 * x[10::2]
+    >>> estimate_shift(x, y)
+    9
     """
+    method = method or 'valid'
     try:
-        s1 = s1.dropna()
-        s1 = s1.values
+        x = x.dropna()
+        x = x.values
     except:
         pass
     try:
-        s2 = s2.dropna()
-        s2 = s2.values
+        y = y.dropna()
+        y = y.values
     except:
         pass
-    try:
-        xcorr = smoother(np.correlate(s1, s2), window_len=min(11, int(0.15 * len(s1))))
-    except:
-        xcorr = np.correlate(s1, s2)
-    i_max = np.argmax(xcorr)
-    if index_and_value:
-        return i_max, xcorr[i_max]
+
+    if len(x) < len(y):
+        swap, x, y = -1, y, x
     else:
-        return i_max
+        swap = +1
+
+    Nx, Ny = len(x), len(y)
+    yi0 = int(max(Ny * ignore_edge, 1))
+    yi1 = max(Ny - yi0 - 1, 0)
+    # ignore a large portion of the data in the shorter vector
+    y = y[yi0:yi1]
+
+    x, y = x - x.mean(), y - y.mean()
+    x, y = x / x.std(),  y / y.std()
+
+    c = np.correlate(x, y, mode=method)
+    try:
+        c = smoother(c)
+    except:
+        pass
+
+    offset = imax = c.argmax()
+    if method == 'full':
+        offset = imax - Nx + 1
+    # elif method == 'valid':
+    #     offset = imax
+    elif method == 'same':
+        raise NotImplementedError("Unsure what index value to report for a correlation maximum at i = {}"
+                                  .format(imax))
+    offset *= swap
+
+    if index_and_value:
+        return offset, c[imax]
+    else:
+        return offset
