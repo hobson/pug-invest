@@ -940,19 +940,25 @@ def estimate_shift(x, y, smoother=None, w=None, index_and_value=False, ignore_ed
         swap = +1
 
     Nx, Ny = len(x), len(y)
-    yi0 = int(max(Ny * ignore_edge, 1))
-    yi1 = max(Ny - yi0 - 1, 0)
-    # ignore a large portion of the data in the shorter vector
-    y = y[yi0:yi1]
+    if ignore_edge > 0:
+        yi0 = int(max(Ny * ignore_edge, 1))
+        yi1 = max(Ny - yi0 - 1, 0)
+        # ignore a large portion of the data in the shorter vector
+        y = y[yi0:yi1]
 
     x, y = x - x.mean(), y - y.mean()
     x, y = x / x.std(),  y / y.std()
 
     c = np.correlate(x, y, mode=method)
+    print(len(x))
+    print(len(y))
+    print(len(w))
+    print(len(c))
     if w is not None:
         wc = int(np.ceil(len(w) / 2.)) - 1
         cc = int(np.ceil(len(c) / 2.)) - 1
         w0 = cc - wc
+        print(w0)
         if w0 > 0:
             c[:w0], c[-w0:] = 0, 0
             c[w0:-w0] = w[:len(c[w0:-w0])] * c[w0:-w0]
