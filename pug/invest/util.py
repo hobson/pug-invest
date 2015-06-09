@@ -16,6 +16,7 @@ from matplotlib import pyplot as plt
 import seaborn
 from scipy.optimize import minimize
 from scipy.signal import correlate
+from titlecase import titlecase
 
 
 from pug.nlp.util import listify, fuzzy_get
@@ -508,7 +509,8 @@ def clipping_params(ts, capacity=100, rate_limit=float('inf'), method=None, max_
     thresh = optimum.x[0]
     integral = clipped_area(ts, thresh=thresh)
     params = dict(optimum)
-    params.update({'costs': costs, 'threshold': thresh, 'initial_guess': thresh0, 'attempts': attempts, 'integral': integral, 'method': method})
+    params.update({'costs': costs, 'threshold': thresh, 'initial_guess': thresh0, 'attempts': attempts,
+                   'integral': integral, 'method': method})
     return params
     # if integral - capacity > capacity:
     #     return {'t0': None, 't1': None, 'threshold': 0.96*thresh + 0.06*bounds[0][1], 'integral': integral}
@@ -530,7 +532,8 @@ def discrete_clipping_params(ts, capacity=100, rate_limit=float('inf')):
     Returns:
       2-tuple: Timestamp of the start and end of the period of the maximum clipped integrated increase
 
-    >> t = ['2014-12-09T00:00', '2014-12-09T00:15', '2014-12-09T00:30', '2014-12-09T00:45', '2014-12-09T01:00', '2014-12-09T01:15', '2014-12-09T01:30', '2014-12-09T01:45']
+    >> t = ['2014-12-09T00:00', '2014-12-09T00:15', '2014-12-09T00:30', '2014-12-09T00:45',
+    .. '2014-12-09T01:00', '2014-12-09T01:15', '2014-12-09T01:30', '2014-12-09T01:45']
     >> ts = pd.Series([217, 234, 235, 231, 219, 219, 231, 232], index=pd.to_datetime(t))
     >> (discrete_clipping_params(ts, capacity=60000) ==
     .. {'integral': 54555.882352942499, 't0': pd.Timestamp('2014-12-09 00:15:00'),
@@ -571,7 +574,8 @@ def square_off(series, time_delta=None, transition_seconds=1):
 
     New samples are 1 second (1e9 ns) before each existing samples, to facilitate plotting and sorting
 
-    >>> square_off(pd.Series(range(3), index=pd.date_range('2014-01-01', periods=3, freq='15m')), time_delta=5.5)  # doctest: +NORMALIZE_WHITESPACE
+    >>> square_off(pd.Series(range(3), index=pd.date_range('2014-01-01', periods=3, freq='15m')),
+    ...            time_delta=5.5)  # doctest: +NORMALIZE_WHITESPACE
     2014-01-31 00:00:00           0
     2014-01-31 00:00:05.500000    0
     2015-04-30 00:00:00           1
@@ -579,7 +583,8 @@ def square_off(series, time_delta=None, transition_seconds=1):
     2016-07-31 00:00:00           2
     2016-07-31 00:00:05.500000    2
     dtype: int64
-    >>> square_off(pd.Series(range(2), index=pd.date_range('2014-01-01', periods=2, freq='15min')), transition_seconds=2.5)  # doctest: +NORMALIZE_WHITESPACE
+    >>> square_off(pd.Series(range(2), index=pd.date_range('2014-01-01', periods=2, freq='15min')),
+    ...            transition_seconds=2.5)  # doctest: +NORMALIZE_WHITESPACE
     2014-01-01 00:00:00           0
     2014-01-01 00:14:57.500000    0
     2014-01-01 00:15:00           1
@@ -614,7 +619,8 @@ def clipping_threshold(ts, capacity=100, rate_limit=10):
     Returns:
       dict: Timestamp of the start and end of the period of the maximum clipped integrated increase
 
-    >>> t = ['2014-12-09T00:00', '2014-12-09T00:15', '2014-12-09T00:30', '2014-12-09T00:45', '2014-12-09T01:00', '2014-12-09T01:15', '2014-12-09T01:30', '2014-12-09T01:45']
+    >>> t = ['2014-12-09T00:00', '2014-12-09T00:15', '2014-12-09T00:30', '2014-12-09T00:45',
+    ...      '2014-12-09T01:00', '2014-12-09T01:15', '2014-12-09T01:30', '2014-12-09T01:45']
     >>> import pandas as pd
     >>> ts = pd.Series([217, 234, 235, 231, 219, 219, 231, 232], index=pd.to_datetime(t))
     >>> clipping_threshold(ts, capacity=60000)  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
@@ -648,23 +654,25 @@ def join_time_series(serieses, ignore_year=False, T_s=None, aggregator='mean'):
         df = pd.DataFrame()
         for name, ts in serieses.iteritems():
             # FIXME: deal with leap years
-            sod = np.array(map(lambda x: (x.hour*3600 + x.minute*60 + x.second),
-                                       ts.index.time))
-            # important that soy is an integer so that merge/join operations identify same values (floats don't equal!?)
-            soy = (ts.index.dayofyear + 366*(ts.index.year - ts.index.year[0])) * 3600 * 24 + sod
+            sod = np.array(map(lambda x: (x.hour * 3600 + x.minute * 60 + x.second),
+                           ts.index.time))
+            # Coerce soy to an integer so that merge/join operations identify same values
+            # (floats don't equal!?)
+            soy = (ts.index.dayofyear + 366 * (ts.index.year - ts.index.year[0])) * 3600 * 24 + sod
             ts2 = pd.Series(ts.values, index=soy)
             ts2 = ts2.dropna()
             ts2 = ts2.sort_index()
             df2 = pd.DataFrame({name: ts2.values}, index=soy)
-
             df = df.join(df2, how='outer')
         if T_s and aggregator:
-            df = df.groupby(lambda x: int(x/float(T_s))).aggregate(dict((name, aggregator) for name in df.columns))
+            df = df.groupby(lambda x: int(x /
+                            float(T_s))).aggregate(dict((name, aggregator) for name in df.columns))
     else:
         df = pd.DataFrame(serieses)
         if T_s and aggregator:
             x0 = df.index[0]
-            df = df.groupby(lambda x: int((x-x0).total_seconds()/float(T_s))).aggregate(dict((name, aggregator) for name in df.columns))
+            df = df.groupby(lambda x: int((x - x0).total_seconds() /
+                            float(T_s))).aggregate(dict((name, aggregator) for name in df.columns))
             # FIXME: convert seconds since begninning of first year back into Timestamp instances
     return df
 
@@ -718,7 +726,8 @@ def simulate(t=1000, poly=(0.,), sinusoids=None, sigma=0, rw=0, irw=0, rrw=0):
             try:
                 A, T = ATP
             except (TypeError, ValueError):
-                # default period is 1 more than the length of the simulated series (no values of the cycle are repeated)
+                # default period is 1 more than the length of the simulated series
+                # (no values of the cycle are repeated)
                 A = ATP[0]
         # print(A, T, P)
         # print(t[1] - t[0])
@@ -1072,24 +1081,30 @@ def make_dataframe(obj, include=None, exclude=None, limit=1e8):
     return pd.DataFrame(obj)
 
 
-def hist(table, field=-1, categorical_field=None,
+def hist(table, field=-1, class_column=None,
          title='', verbosity=2, **kwargs):
-    """Compute and/or plot emperical, discrete PDFs
+    """Plot discrete PDFs
 
-    >>>  len(hist(verbosity=0, categorical_field='waterfront_type', title='Waterfront'))
+    >>> df = pd.DataFrame(pd.np.random.randn(99,3), columns=list('ABC'))
+    >>> df['Class'] = pd.np.array((pd.np.matrix([1,1,1])*pd.np.matrix(df).T).T > 0)
+    >>> len(hist(pd.DataFrame(pd.np.random.randn(99,3), columns=list('ABC')), verbosity=0, class_column='Class'))
     3
     """
     if not isinstance(table, (pd.DataFrame, basestring)):
         try:
             table = make_dataframe(table.objects.filter(**{field + '__isnull': False}))
-    table = table[pd.notnull(table[field])]
+        except:
+            table = table
+    # labels = get_column_labels(table)
     try:
-        fields = table.columns
+        table = table[pd.notnull(table[field])]
+    except:
+        pass
 
-    categories = []
-    if categorical_field is not None:
-        categories = sorted(set(table[categorical_field]))
-    labels = [str(c) for c in categories] + ['all']
+    series_labels = []
+    if class_column is not None:
+        series_labels = sorted(set(table[class_column]))
+    labels = [str(c) for c in series_labels] + ['all']
 
     default_kwargs = {
         'normed': False,
