@@ -921,6 +921,7 @@ def estimate_shift(x, y, smoother=None, w=None, index_and_value=False, ignore_ed
       int: number to subtract from an x index to compute a corresponding y index
     >>> x, y = np.asarray(np.matrix([[0.5, 0.01], [0.01, 1.0]]) * np.random.randn(50,2).T)
     >>> x[:30-8] = y[8:30]
+
     >> estimate_shift(x, y, 'full')
     -8
     >> estimate_shift(x, y, 'valid')
