@@ -7,8 +7,7 @@ __subpackage__ = 'invest'
 project_name = '{}'.format(__namespace_package__) + ('-' + __subpackage__ if __subpackage__ else '')
 package_name = '{}'.format(__namespace_package__) + ('.' + __subpackage__ if __subpackage__ else '')
 
-from setuptools import find_packages
-from distutils.core import setup
+from setuptools import find_packages, setup
 import os
 
 # # If you want tests to work with django settings.py you need django-setuptest
@@ -39,7 +38,7 @@ except:  # (IOError, ImportError, OSError, RuntimeError):
     print('WARNING: Unable to find or read README.rst.')
 
 
-dependency_links = [] #  ['http://github.com/hobson/pug-nlp/tarball/master#egg=pug-nlp-master'] 
+dependency_links = [] #  ['http://github.com/hobson/pug-nlp/tarball/master#egg=pug-nlp-master']
 EXCLUDE_FROM_PACKAGES = []
 
 print('Installing package named {} from the {} project. . .'.format(package_name, project_name))
@@ -100,7 +99,7 @@ setup(
     # this would install the master branch from github
     # url=__url__,
 
-    # Force setup.py to use the latest github master source files rather than the cheeseshop tarball: 
+    # Force setup.py to use the latest github master source files rather than the cheeseshop tarball:
     download_url = "{}/tarball/master".format(__url__),
     keywords = ["finance", "quant", "quantitative finance", "time series", "analysis", "data", "science", "data science", "math", "machine-learning", "statistics"],
     classifiers = [
