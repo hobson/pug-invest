@@ -1022,6 +1022,31 @@ def fuzzy_index_match(possiblities, label, **kwargs):
         return [fuzzy_get(possibilities, lbl) for lbl in label]
 
 
+def get_column_labels(obj):
+    """Retrieve the column labels/keys from any DataFrame or QuerySet-like table object
+
+    >>> get_column_labels(dict(zip('ABC', np.arange(12).reshape((3,4)))))
+    ['A', 'B', 'C']
+    """
+    labels = get_column_labels(obj)
+    if not isinstance(obj, (list, tuple, pd.ndarray)):
+        try:
+            labels = [f.name for f in obj.model._meta.fields]
+        except:
+            try:
+                labels = obj.keys()
+            except:
+                try:
+                    labels = dir(obj)
+                except:
+                    labels = None
+    elif all(isinstance(heading, basestring) for heading in obj[0]):
+        labels = list(obj[0])
+        # if obj isn't a reference to a mutable (dict, DataFrame, list, etc), this won't work
+        del obj[0]
+    return labels
+
+
 def make_dataframe(obj, include=None, exclude=None, limit=1e8):
     """Coerce an iterable, queryset, list or rows, dict of columns, etc into a Pandas DataFrame"""
     try:
@@ -1033,20 +1058,7 @@ def make_dataframe(obj, include=None, exclude=None, limit=1e8):
     # if the obj is a named tuple, DataFrame, dict of columns, django QuerySet, sql alchemy query result
     # retrieve the "include"d field/column names from its keys/fields/attributes
     if include is None:
-        if not isinstance(obj, (list, tuple)):
-            try:
-                include = [f.name for f in obj.model._meta.fields]
-            except:
-                try:
-                    include = obj.keys()
-                except:
-                    try:
-                        include = dir(obj)
-                    except:
-                        include = list(obj)
-        elif all(isinstance(heading, basestring) for heading in obj[0]):
-            include = list(obj[0])
-            obj = obj[1:limit]
+        include = get_column_labels(obj)
     if exclude is not None and include is not None and include and exclude:
         include = [i for i in include if i not in exclude]
     try:
@@ -1070,8 +1082,9 @@ def hist(table, field=-1, categorical_field=None,
     if not isinstance(table, (pd.DataFrame, basestring)):
         try:
             table = make_dataframe(table.objects.filter(**{field + '__isnull': False}))
-    table = table.iloc[table[field].isnull() == False]
-    fields = table.columns
+    table = table[pd.notnull(table[field])]
+    try:
+        fields = table.columns
 
     categories = []
     if categorical_field is not None:
