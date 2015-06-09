@@ -4,9 +4,10 @@
 #  without importing this file or __init__.py
 __namespace_package__ = 'pug'
 __subpackage__ = 'invest'
-__doc__ = "{}.{} -- Investing (finance) python module by and for the PDX Python User Group (PUG)".format(__namespace_package__, __subpackage__)
+__doc__ = "{}.{} -- Time series plotting, statistics, and modeling, "\
+          "built by and for the PDX Python User Group (PUG)".format(__namespace_package__, __subpackage__)
 __url__ = "https://github.com/hobson/{}-{}".format(__namespace_package__, __subpackage__)
-__version__ = '0.0.18'
+__version__ = '0.0.19'
 __author__ = "Hobson <hobson@totalgood.com>"
 __authors__ = (
     "Hobson <hobson@totalgood.com>",

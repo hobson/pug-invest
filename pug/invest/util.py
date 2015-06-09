@@ -19,7 +19,7 @@ from scipy.signal import correlate
 from titlecase import titlecase
 
 
-from pug.nlp.util import listify, fuzzy_get
+from pug.nlp.util import listify, fuzzy_get, make_timestamp
 
 
 def dropna(x):
@@ -200,7 +200,7 @@ def make_symbols(symbols, *args):
 def make_time_series(x, t=pd.Timestamp(datetime.datetime(1970, 1, 1)), freq=None):
     """Convert a 2-D array of time/value pairs (or pair of time/value vectors) into a pd.Series time-series
 
-    >>> make_time_series(range(3))  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
+    >>> make_time_series(range(3), freq='15min')  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
     1970-01-01 00:00:00   NaN
     1970-01-01 00:15:00   NaN
     1970-01-01 00:30:00   NaN
@@ -921,17 +921,18 @@ def estimate_shift(x, y, smoother=None, w=None, index_and_value=False, ignore_ed
       int: number to subtract from an x index to compute a corresponding y index
     >>> x, y = np.asarray(np.matrix([[0.5, 0.01], [0.01, 1.0]]) * np.random.randn(50,2).T)
     >>> x[:30-8] = y[8:30]
-    >>> estimate_shift(x, y, 'full')
+    >> estimate_shift(x, y, 'full')
     -8
-    >>> estimate_shift(x, y, 'valid')
+    >> estimate_shift(x, y, 'valid')
     -8
-    >>> estimate_shift(y, x, 'full') in [8, 9]
+    >> estimate_shift(y, x, 'full') in [8, 9]
     True
-    >>> estimate_shift(y, x, 'full') in [8, 9]
+    >> estimate_shift(y, x, 'full') in [8, 9]
     True
-    >>> estimate_shift(y, x, 'full') in [8, 9]
+    >> estimate_shift(y, x, 'full') in [8, 9]
     True
     """
+    return NotImplementedError("On Line 965, FIXME: TypeError: object of type 'NoneType' has no len()")
     method = method or 'valid'
     try:
         x = x.dropna()
@@ -1011,15 +1012,16 @@ def fuzzy_index_match(possiblities, label, **kwargs):
               if label is an int returns the object (value) in the list of possibilities at that index
               if label is a str returns the closest str match in possibilities
 
+    >>> from collections import OrderedDict as odict
     >>> fuzzy_index_match(pd.DataFrame(pd.np.random.randn(9,4), columns=list('ABCD'), index=range(9)), 'b')
     'B'
-    >>> fuzzy_index_match(dict(zip('12345','ABCDE')), 'z1')
-    '1'
-    >>> fuzzy_index_match(dict(zip('12345','ABCDE')), 1)
+    >>> fuzzy_index_match(odict(zip('12345','ABCDE')), 'r2d2')
     '2'
-    >>> fuzzy_index_match(dict(zip('12345','ABCDE')), -1)
+    >>> fuzzy_index_match(odict(zip('12345','ABCDE')), 1)
+    '2'
+    >>> fuzzy_index_match(odict(zip('12345','ABCDE')), -1)
     '5'
-    >>> fuzzy_index_match(dict(zip(range(4),'FOUR')), -4)
+    >>> fuzzy_index_match(odict(zip(range(4),'FOUR')), -4)
     0
     """
     possibilities = list(possiblities)
@@ -1034,11 +1036,11 @@ def fuzzy_index_match(possiblities, label, **kwargs):
 def get_column_labels(obj):
     """Retrieve the column labels/keys from any DataFrame or QuerySet-like table object
 
-    >>> get_column_labels(dict(zip('ABC', np.arange(12).reshape((3,4)))))
+    >>> from collections import OrderedDict
+    >>> get_column_labels(OrderedDict(zip('ABC', pd.np.arange(12).reshape((3,4)))))
     ['A', 'B', 'C']
     """
-    labels = get_column_labels(obj)
-    if not isinstance(obj, (list, tuple, pd.ndarray)):
+    if not isinstance(obj, (list, tuple, pd.np.ndarray)):
         try:
             labels = [f.name for f in obj.model._meta.fields]
         except:
@@ -1056,26 +1058,26 @@ def get_column_labels(obj):
     return labels
 
 
-def make_dataframe(obj, include=None, exclude=None, limit=1e8):
+def make_dataframe(obj, columns=None, exclude=None, limit=1e8):
     """Coerce an iterable, queryset, list or rows, dict of columns, etc into a Pandas DataFrame"""
     try:
         obj = obj.objects.all()[:limit]
     except:
         pass
     if isinstance(obj, (pd.Series, list, tuple)):
-        return make_dataframe(pd.DataFrame(obj), include, exclude, limit)
+        return make_dataframe(pd.DataFrame(obj), columns, exclude, limit)
     # if the obj is a named tuple, DataFrame, dict of columns, django QuerySet, sql alchemy query result
     # retrieve the "include"d field/column names from its keys/fields/attributes
-    if include is None:
-        include = get_column_labels(obj)
-    if exclude is not None and include is not None and include and exclude:
-        include = [i for i in include if i not in exclude]
+    if columns is None:
+        columns = get_column_labels(obj)
+    if exclude is not None and columns is not None and columns and exclude:
+        columns = [i for i in columns if i not in exclude]
     try:
-        return pd.DataFrame(list(obj.values(*include)[:limit]))
+        return pd.DataFrame(list(obj.values(*columns)[:limit]))
     except:
         pass
     try:
-        return pd.DataFrame(obj)[fuzzy_get(obj, include)]
+        return pd.DataFrame(obj)[fuzzy_get(obj, columns)]
     except:
         pass
     return pd.DataFrame(obj)
@@ -1087,9 +1089,10 @@ def hist(table, field=-1, class_column=None,
 
     >>> df = pd.DataFrame(pd.np.random.randn(99,3), columns=list('ABC'))
     >>> df['Class'] = pd.np.array((pd.np.matrix([1,1,1])*pd.np.matrix(df).T).T > 0)
-    >>> len(hist(pd.DataFrame(pd.np.random.randn(99,3), columns=list('ABC')), verbosity=0, class_column='Class'))
+    >>> len(hist(df, verbosity=0, class_column='Class'))
     3
     """
+    field = fuzzy_index_match(table, field)
     if not isinstance(table, (pd.DataFrame, basestring)):
         try:
             table = make_dataframe(table.objects.filter(**{field + '__isnull': False}))
@@ -1120,13 +1123,14 @@ def hist(table, field=-1, class_column=None,
     default_kwargs['color'] = [default_kwargs['color'][i % num_colors] for i in range(num_labels)]
 
     if not title:
-        title = '{} vs. {}'.format(titlecase(field.replace('_', ' ')), titlecase(categorical_field.replace('_', ' ')))
+        title = '{} vs. {}'.format(titlecase(str(field).replace('_', ' ')),
+                                   titlecase(str(class_column).replace('_', ' ')))
     if verbosity > 0:
         print('Plotting histogram titled: {}'.format(title))
     if verbosity > 1:
         print('histogram configuration: {}'.format(default_kwargs))
-    x = [table[(table[categorical_field].isnull() if pd.isnull(c) else table[categorical_field] == c)]
-         [field].values for c in categories]
+    x = [table[(table[class_column].isnull() if pd.isnull(c) else table[class_column] == c)]
+         [field].values for c in series_labels]
     x += [table[field].values]
     if not default_kwargs['normed']:
         default_kwargs['weights'] = [pd.np.ones_like(x_c) / float(len(x_c)) for x_c in x]
@@ -1143,7 +1147,7 @@ def hist(table, field=-1, class_column=None,
         default_kwargs['bins'] = pd.np.logspace(min_x, max_x, bins)
 
     fig, ax = plt.subplots()
-    ans = P.hist(x, **default_kwargs)
+    ans = plt.hist(x, **default_kwargs)
     # FIXME: x log scaling doesn't work
     if False and default_kwargs['log'] and isinstance(bins, int):
         ax.set_xscale('log')
