@@ -17,7 +17,8 @@ import seaborn
 from scipy.optimize import minimize
 from scipy.signal import correlate
 
-from pug.nlp.util import listify
+
+from pug.nlp.util import listify, fuzzy_get
 
 
 def dropna(x):
@@ -991,3 +992,148 @@ def estimate_shift(x, y, smoother=None, w=None, index_and_value=False, ignore_ed
     else:
         return offset
 estimate_offset = estimate_shift
+
+
+def fuzzy_index_match(possiblities, label, **kwargs):
+    """Find the closest matching column label, key, or integer indexed value
+
+    Returns:
+      type(label): sequence of immutable objects corresponding to best matches to each object in label
+              if label is an int returns the object (value) in the list of possibilities at that index
+              if label is a str returns the closest str match in possibilities
+
+    >>> fuzzy_index_match(pd.DataFrame(pd.np.random.randn(9,4), columns=list('ABCD'), index=range(9)), 'b')
+    'B'
+    >>> fuzzy_index_match(dict(zip('12345','ABCDE')), 'z1')
+    '1'
+    >>> fuzzy_index_match(dict(zip('12345','ABCDE')), 1)
+    '2'
+    >>> fuzzy_index_match(dict(zip('12345','ABCDE')), -1)
+    '5'
+    >>> fuzzy_index_match(dict(zip(range(4),'FOUR')), -4)
+    0
+    """
+    possibilities = list(possiblities)
+    if isinstance(label, basestring):
+        return fuzzy_get(possibilities, label, **kwargs)
+    if isinstance(label, int):
+        return possibilities[label]
+    if isinstance(label, list):
+        return [fuzzy_get(possibilities, lbl) for lbl in label]
+
+
+def make_dataframe(obj, include=None, exclude=None, limit=1e8):
+    """Coerce an iterable, queryset, list or rows, dict of columns, etc into a Pandas DataFrame"""
+    try:
+        obj = obj.objects.all()[:limit]
+    except:
+        pass
+    if isinstance(obj, (pd.Series, list, tuple)):
+        return make_dataframe(pd.DataFrame(obj), include, exclude, limit)
+    # if the obj is a named tuple, DataFrame, dict of columns, django QuerySet, sql alchemy query result
+    # retrieve the "include"d field/column names from its keys/fields/attributes
+    if include is None:
+        if not isinstance(obj, (list, tuple)):
+            try:
+                include = [f.name for f in obj.model._meta.fields]
+            except:
+                try:
+                    include = obj.keys()
+                except:
+                    try:
+                        include = dir(obj)
+                    except:
+                        include = list(obj)
+        elif all(isinstance(heading, basestring) for heading in obj[0]):
+            include = list(obj[0])
+            obj = obj[1:limit]
+    if exclude is not None and include is not None and include and exclude:
+        include = [i for i in include if i not in exclude]
+    try:
+        return pd.DataFrame(list(obj.values(*include)[:limit]))
+    except:
+        pass
+    try:
+        return pd.DataFrame(obj)[fuzzy_get(obj, include)]
+    except:
+        pass
+    return pd.DataFrame(obj)
+
+
+def hist(table, field=-1, categorical_field=None,
+         title='', verbosity=2, **kwargs):
+    """Compute and/or plot emperical, discrete PDFs
+
+    >>>  len(hist(verbosity=0, categorical_field='waterfront_type', title='Waterfront'))
+    3
+    """
+    if not isinstance(table, (pd.DataFrame, basestring)):
+        try:
+            table = make_dataframe(table.objects.filter(**{field + '__isnull': False}))
+    table = table.iloc[table[field].isnull() == False]
+    fields = table.columns
+
+    categories = []
+    if categorical_field is not None:
+        categories = sorted(set(table[categorical_field]))
+    labels = [str(c) for c in categories] + ['all']
+
+    default_kwargs = {
+        'normed': False,
+        'histtype': 'bar',
+        'color': seaborn.color_palette(),
+        'label': labels,
+        'log': True,
+        'bins': 10,
+        }
+    default_kwargs.update(kwargs)
+    num_colors = len(default_kwargs['color'])
+    num_labels = len(default_kwargs['label'])
+    default_kwargs['color'] = [default_kwargs['color'][i % num_colors] for i in range(num_labels)]
+
+    if not title:
+        title = '{} vs. {}'.format(titlecase(field.replace('_', ' ')), titlecase(categorical_field.replace('_', ' ')))
+    if verbosity > 0:
+        print('Plotting histogram titled: {}'.format(title))
+    if verbosity > 1:
+        print('histogram configuration: {}'.format(default_kwargs))
+    x = [table[(table[categorical_field].isnull() if pd.isnull(c) else table[categorical_field] == c)]
+         [field].values for c in categories]
+    x += [table[field].values]
+    if not default_kwargs['normed']:
+        default_kwargs['weights'] = [pd.np.ones_like(x_c) / float(len(x_c)) for x_c in x]
+    elif isinstance(default_kwargs['normed'], int) and default_kwargs['normed'] < 0:
+        default_kwargs['normed'] = 0
+
+    bins = default_kwargs['bins']
+    # FIXME: x log scaling doesn't work
+    if False and default_kwargs['log'] and isinstance(bins, int):
+        max_x = max(pd.np.max(x_c) for x_c in x)
+        min_x = min(pd.np.min(x_c) for x_c in x)
+        if pd.isnull(min_x) or not(min_x):
+            min_x = max_x / 10.
+        default_kwargs['bins'] = pd.np.logspace(min_x, max_x, bins)
+
+    fig, ax = plt.subplots()
+    ans = P.hist(x, **default_kwargs)
+    # FIXME: x log scaling doesn't work
+    if False and default_kwargs['log'] and isinstance(bins, int):
+        ax.set_xscale('log')
+    if verbosity > 1:
+        plt.legend(default_kwargs['label'])
+        try:
+            plt.show(block=False)
+        except:
+            plt.show()
+
+    plt.title(title)
+    plt.xlabel(titlecase(field.replace('_', ' ')))
+    if 'weights' in default_kwargs:
+        plt.ylabel('Normalized Frequency or Probability')
+    elif default_kwargs['normed']:
+        plt.ylabel('Normalized Count')
+    else:
+        plt.ylabel('Count')
+    if verbosity > 2:
+        plt.savefig(make_timestamp() + '--' + title.replace(' ', '-') + '.png', transparent=True)
+    return ans
