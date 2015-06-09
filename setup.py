@@ -64,6 +64,7 @@ install_requires = [
     'fuzzywuzzy>=0.5.0',
     'python-Levenshtein>=0.12.0',
     'python-slugify>=0.1.0',
+    'seaborn>=0.5.1',
     'matplotlib>=1.4.3',
     'numpy>=1.9.2',
     'scipy>=0.15.1',
@@ -71,12 +72,12 @@ install_requires = [
 
     'pug-nlp>=0.0.19',
     ]
-# print('install_requires: {}'.format(install_requires))
+print('install_requires: {}'.format(install_requires))
 
 
 setup(
     name=project_name,
-    packages=find_packages(exclude=EXCLUDE_FROM_PACKAGES),
+    packages=packages,
     namespace_packages=[__namespace_package__],
 
     # install non-.py files listed in MANIFEST.in (.js, .html, .txt, .md, etc)
